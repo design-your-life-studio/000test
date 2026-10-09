@@ -4,16 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>3D PART BUILDER &amp; ASSEMBLY</title>
+    <!-- 連結預覽 (LINE、Facebook 等) 只顯示標題，不帶說明文字 -->
     <meta name="description" content=" ">
-    <!-- ... 其他 meta 標籤 ... -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="3D PART BUILDER &amp; ASSEMBLY">
+    <meta property="og:description" content=" ">
+    <meta name="twitter:title" content="3D PART BUILDER &amp; ASSEMBLY">
+    <meta name="twitter:description" content=" ">
     
-    <!-- 1. 引入 Tailwind CSS -->
+    <!-- 引入 Tailwind CSS 用於快速構建 UI -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- 2. 引入你剛剛拆出去的樣式檔 (取代原本落落長的 <style>) -->
+    <!-- 引入獨立的 CSS 樣式檔 -->
     <link rel="stylesheet" href="style.css">
 
-    <!-- 3. 保留 Import Map (這必須寫在 HTML 裡讓瀏覽器認識 Three.js) -->
+    <!-- 使用 Import Map 載入 Three.js 及所需模組 -->
     <script type="importmap">
         {
             "imports": {
@@ -24,10 +29,180 @@
     </script>
 </head>
 <body class="w-screen flex flex-col">
-    
-    <!-- ... (這裡保留你原本寫的所有 HTML 結構、按鈕、側邊欄、畫面容器) ... -->
+    <button id="btn-exit-visit" class="fixed top-3 right-3 z-50 bg-[#1473e6] hover:bg-[#0d66d0] text-white px-3 py-1.5 rounded transition-colors text-xs font-medium shadow-lg">退出參觀模式</button>
 
-    <!-- 4. 在最下方引入你剛剛拆出去的邏輯腳本 (取代原本落落長的 <script>) -->
+    <!-- 頂部導覽列 -->
+    <header class="h-10 border-b border-[#111] bg-[#2a2a2a] flex items-center px-4 shadow-sm z-20 shrink-0">
+        <h1 class="text-xs font-semibold tracking-wider text-gray-200">3D PART BUILDER & ASSEMBLY</h1>
+        <div class="ml-auto text-[11px] text-gray-500 flex items-center gap-4">
+            <span>左鍵：旋轉/選取</span>
+            <span>中鍵：平移</span>
+            <span>滾輪：縮放</span>
+            <div class="w-px h-4 bg-[#444]"></div>
+            <button id="btn-fullscreen" class="bg-[#3a3a3a] hover:bg-[#4a4a4a] text-white px-3 py-1.5 rounded transition-colors text-[11px] font-medium shadow" title="全螢幕專心製作">全螢幕</button>
+            <button id="btn-open" class="bg-[#3a3a3a] hover:bg-[#4a4a4a] text-white px-3 py-1.5 rounded transition-colors text-[11px] font-medium shadow">開啟專案</button>
+            <button id="btn-save" class="bg-[#1473e6] hover:bg-[#0d66d0] text-white px-3 py-1.5 rounded transition-colors text-[11px] font-medium shadow">儲存專案</button>
+            <input type="file" id="file-open" accept=".json,application/json" class="hidden">
+        </div>
+    </header>
+
+    <main class="flex-1 flex overflow-hidden min-h-0">
+        
+        <!-- ================= 左側面板：零件繪製區 ================= -->
+        <aside id="left-sidebar" class="w-[380px] ml-0 transition-all duration-300 border-r border-[#111] bg-[#252525] flex flex-col z-20 shadow-[4px_0_15px_rgba(0,0,0,0.3)] shrink-0 relative h-full min-h-0">
+            
+            <!-- 收合/展開按鈕 -->
+            <button id="toggle-sidebar" class="absolute -right-6 top-1/2 -translate-y-1/2 w-6 h-16 bg-[#2a2a2a] border border-[#111] border-l-0 rounded-r flex justify-center items-center cursor-pointer hover:bg-[#333] text-gray-400 z-50 shadow-md">
+                <span id="toggle-icon" class="text-xs">◀</span>
+            </button>
+
+            <div class="p-4 border-b border-[#333] bg-[#2a2a2a] shrink-0">
+                <h2 class="text-sm font-medium text-white mb-1">1. 繪製零件</h2>
+                <p class="text-xs text-gray-400">選擇形狀並設定數值，然後加入組裝區。</p>
+                <p id="edit-banner" class="hidden text-xs text-yellow-400 mt-1">✎ 正在編輯右側零件：修改顏色或尺寸後，按下方「套用修改」。</p>
+            </div>
+
+            <!-- 參數表單 -->
+            <div class="p-4 space-y-4 border-b border-[#333] shrink min-h-0 overflow-y-auto">
+                
+                <!-- 形狀選擇 -->
+                <div class="flex flex-col gap-1.5">
+                    <label class="text-xs text-gray-300">立體圖形總類</label>
+                    <select id="shape-type" class="w-full h-8 px-2 rounded text-sm">
+                        <option value="box">矩形方塊 (Box)</option>
+                        <option value="cylinder">圓柱體 (Cylinder)</option>
+                        <option value="sphere">圓球體 (Sphere)</option>
+                    </select>
+                </div>
+
+                <!-- 矩形參數區 -->
+                <div id="param-box" class="space-y-3">
+                    <div class="flex flex-col gap-3">
+                        <div class="w-full flex flex-col gap-1"><label class="text-[10px] text-gray-400">寬度 (X)</label><input type="number" id="box-w" value="100" min="1" class="h-7 px-2 rounded text-xs"></div>
+                        <div class="w-full flex flex-col gap-1"><label class="text-[10px] text-gray-400">高度 (Y)</label><input type="number" id="box-h" value="100" min="1" class="h-7 px-2 rounded text-xs"></div>
+                        <div class="w-full flex flex-col gap-1"><label class="text-[10px] text-gray-400">深度 (Z)</label><input type="number" id="box-d" value="100" min="1" class="h-7 px-2 rounded text-xs"></div>
+                    </div>
+                </div>
+
+                <!-- 圓柱參數區 (預設隱藏) -->
+                <div id="param-cylinder" class="space-y-3 hidden">
+                    <div class="flex flex-col gap-3">
+                        <div class="w-full flex flex-col gap-1"><label class="text-[10px] text-gray-400">半徑 (Radius)</label><input type="number" id="cyl-r" value="50" min="1" class="h-7 px-2 rounded text-xs"></div>
+                        <div class="w-full flex flex-col gap-1"><label class="text-[10px] text-gray-400">高度 (Height)</label><input type="number" id="cyl-h" value="150" min="1" class="h-7 px-2 rounded text-xs"></div>
+                    </div>
+                </div>
+
+                <!-- 圓球參數區 (預設隱藏) -->
+                <div id="param-sphere" class="space-y-3 hidden">
+                    <div class="flex flex-col gap-3">
+                        <div class="w-full flex flex-col gap-1"><label class="text-[10px] text-gray-400">半徑 (Radius)</label><input type="number" id="sph-r" value="60" min="1" class="h-7 px-2 rounded text-xs"></div>
+                    </div>
+                </div>
+                
+                <div class="flex flex-col gap-1.5 pt-2">
+                    <label id="color-label" class="text-[10px] text-gray-400">零件顏色</label>
+                    <div id="face-chips-wrap" class="flex flex-col gap-1.5">
+                        <div id="face-chips" class="flex flex-wrap gap-1"></div>
+                    </div>
+                    <input type="color" id="part-color" value="#888888" class="w-full h-8 rounded cursor-pointer bg-transparent border-none p-0">
+                </div>
+
+            </div>
+
+            <!-- 左側小預覽視窗 -->
+            <div class="flex-1 min-h-0 relative overflow-hidden bg-[#1a1a1a]">
+                <div class="absolute top-2 left-2 text-[10px] text-gray-500 z-10">零件預覽</div>
+                <div id="left-canvas-container" class="absolute inset-0"></div>
+            </div>
+
+            <!-- 核心動作按鈕 -->
+            <div class="p-4 border-t border-[#333] bg-[#2a2a2a] shrink-0">
+                <button id="add-to-assembly-btn" class="btn-primary w-full py-2.5 rounded text-sm font-medium tracking-wide shadow-md">
+                    加入右方組裝視窗 ⭢
+                </button>
+                <button id="cancel-edit-btn" class="hidden btn-tool w-full py-2 mt-2 rounded text-sm">取消編輯</button>
+            </div>
+        </aside>
+
+        <!-- ================= 右側面板：主組裝區 ================= -->
+        <section class="flex-1 relative flex flex-col bg-[#141414] min-w-0 min-h-0 overflow-hidden">
+            
+            <!-- 組裝工具列 -->
+            <div id="right-toolbar" class="absolute top-3 left-1/2 -translate-x-1/2 z-10 flex flex-wrap justify-center w-max max-w-[96%] gap-3 bg-[#252525]/90 backdrop-blur px-4 py-2.5 rounded-lg border border-[#333] shadow-lg">
+                <!-- 操作模式 -->
+                <button id="tool-undo" class="btn-tool text-sm px-4 py-1.5 rounded whitespace-nowrap" title="返回上一步 (Ctrl/Cmd+Z)" disabled>上一步</button>
+                <button id="tool-redo" class="btn-tool text-sm px-4 py-1.5 rounded whitespace-nowrap" title="返回下一步 (Ctrl/Cmd+Shift+Z 或 Ctrl+Y)" disabled>下一步</button>
+
+                <div class="w-px h-7 bg-[#444] self-center mx-1"></div>
+
+                <button id="mode-translate" class="btn-tool active text-sm px-4 py-1.5 rounded whitespace-nowrap">移動 (H)</button>
+                <button id="mode-rotate" class="btn-tool text-sm px-4 py-1.5 rounded whitespace-nowrap">旋轉 (R)</button>
+                
+                <div class="w-px h-7 bg-[#444] self-center mx-1"></div>
+                
+                <!-- 對齊工具 -->
+                <button id="tool-snap-grid" class="btn-tool text-sm px-4 py-1.5 rounded whitespace-nowrap" title="拖曳時按固定網格移動">網格吸附: 關</button>
+                <button id="tool-align-floor" class="btn-tool text-sm px-4 py-1.5 rounded whitespace-nowrap" title="將選取的零件底部貼齊基準面">貼齊地面</button>
+                <button id="tool-align-center" class="btn-tool text-sm px-4 py-1.5 rounded whitespace-nowrap" title="將選取的零件移至場景中心">置中對齊</button>
+                <button id="tool-box-select" class="btn-tool text-sm px-4 py-1.5 rounded whitespace-nowrap" title="開啟後，在畫面上拖曳框選物件 (V)。由左往右拖＝完全框住才選取；由右往左拖＝碰到就選取；按住 Shift 為加選。開啟時左鍵不再轉動視角，改用右鍵轉動、中鍵平移">框選模式 (V)</button>
+                
+                <div class="w-px h-7 bg-[#444] self-center mx-1"></div>
+                
+                <div class="w-px h-7 bg-[#444] self-center mx-1"></div>
+
+                <!-- 圖片上傳 (也可直接把圖檔拖進右側畫面) -->
+                <button id="tool-upload-image" class="btn-tool text-sm px-4 py-1.5 rounded whitespace-nowrap" title="上傳圖片到組裝區；可移動、旋轉，選取後拖曳 8 個錨點縮放 (按住 Shift 等比縮放)">上傳圖片</button>
+                <input type="file" id="image-file-input" accept="image/*" multiple class="hidden">
+                <button id="tool-upload-video" class="btn-tool text-sm px-4 py-1.5 rounded whitespace-nowrap" title="上傳影片到組裝區 (影片不會存進專案檔；重新開啟專案後需重新連結)">上傳影片</button>
+                <input type="file" id="video-file-input" accept="video/*" multiple class="hidden">
+                <button id="tool-relink-video" class="btn-tool text-sm px-4 py-1.5 rounded whitespace-nowrap" title="選取一個影片(或「影片未載入」的框)，重新指定影片檔">重新連結影片</button>
+                <input type="file" id="video-relink-input" accept="video/*" class="hidden">
+                <button id="tool-video-play" class="btn-tool text-sm px-4 py-1.5 rounded whitespace-nowrap" title="播放 / 暫停；有選取影片時只控制選取的，否則控制全部">影片播放</button>
+                <button id="tool-video-mute" class="btn-tool text-sm px-4 py-1.5 rounded whitespace-nowrap" title="影片聲音開 / 關 (預設關閉)">影片聲音(關)</button>
+
+                <div class="w-px h-7 bg-[#444] self-center mx-1"></div>
+
+                <!-- 群組工具 (Shift+點選可多選) -->
+                <button id="tool-group" class="btn-tool text-sm px-4 py-1.5 rounded whitespace-nowrap" title="Shift+點選可多選；選取 2 個以上零件後建立群組，之後點選任一零件即選取整組">建立群組 (G)</button>
+                <button id="tool-ungroup" class="btn-tool text-sm px-4 py-1.5 rounded whitespace-nowrap" title="解散選取零件所屬的群組">解散群組 (U)</button>
+
+                <div class="w-px h-7 bg-[#444] self-center mx-1"></div>
+
+                <!-- 新增複製按鈕 -->
+                <button id="tool-edit-left" class="btn-tool text-sm px-4 py-1.5 rounded whitespace-nowrap" title="把選取的零件送回左側，修改顏色或尺寸後套用 (保留原本的位置與角度)">回左側編輯 (E)</button>
+                <button id="tool-duplicate" class="btn-tool text-sm px-4 py-1.5 rounded whitespace-nowrap">複製零件 (C)</button>
+                
+                <button id="tool-delete" class="btn-tool btn-danger text-sm px-4 py-1.5 rounded whitespace-nowrap">刪除零件 (Del)</button>
+
+                <div class="w-px h-7 bg-[#444] self-center mx-1"></div>
+
+                <button id="tool-showcase" class="btn-tool text-sm px-4 py-1.5 rounded whitespace-nowrap" title="電影式自動展示：組裝動畫、螺旋環繞、群組聚焦、爆炸圖 (Esc 或點擊畫面可中止)">展示</button>
+                <button id="tool-visit" class="btn-tool text-sm px-4 py-1.5 rounded whitespace-nowrap" title="隱藏所有編輯介面，只能移動視角">參觀模式</button>
+            </div>
+
+            <!-- 未選取提示 -->
+            <div id="selection-hint" class="absolute bottom-4 right-4 text-xs text-yellow-500 bg-[#222] px-3 py-1.5 rounded border border-[#444] z-10 hidden">
+                尚未選取任何零件 (請點擊畫面中的模型)
+            </div>
+            
+            <!-- 多選資訊 -->
+            <!-- 框選矩形 -->
+            <div id="box-select-rect" class="absolute z-20 hidden pointer-events-none border border-cyan-300" style="background: rgba(0,229,255,0.12);"></div>
+
+            <div id="selection-info" class="absolute bottom-4 left-4 text-xs text-cyan-300 bg-[#222] px-3 py-1.5 rounded border border-[#444] z-10 hidden pointer-events-none"></div>
+
+            <!-- 旋轉角度提示 (新增) -->
+            <div id="rotation-tooltip" class="absolute top-16 left-1/2 -translate-x-1/2 bg-[#1473e6]/90 backdrop-blur text-white px-4 py-1.5 rounded shadow-lg text-xs font-mono hidden z-20 pointer-events-none border border-[#3b82f6]">
+                X: 0° | Y: 0° | Z: 0°
+            </div>
+
+            <!-- 主 3D 畫布容器 -->
+            <div id="right-canvas-container" class="absolute inset-0 outline-none" tabindex="0"></div>
+        </section>
+
+    </main>
+
+    <!-- 引入獨立的 JavaScript 邏輯檔 -->
     <script type="module" src="main.js"></script>
 </body>
 </html>

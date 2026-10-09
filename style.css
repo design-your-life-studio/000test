@@ -1,0 +1,19 @@
+body {
+    background-color: #1e1e1e;
+    color: #d1d1d1;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    overflow: hidden;
+    height: 100vh;
+    height: 100dvh;
+    user-select: none;
+}
+
+/* canvas 預設為 inline... */
+canvas { display: block; }
+
+/* ... (中間省略，把你原本所有的 CSS 都貼過來) ... */
+
+.btn-tool:disabled { opacity: 0.35; cursor: not-allowed; }
+.btn-tool:disabled:hover { background-color: #333; color: #ddd; }
+.btn-danger:hover { background-color: #dc2626; border-color: #dc2626; color: white;}

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D PART BUILDER &amp; ASSEMBLY</title>
+    <meta name="description" content=" ">
+    <!-- ... 其他 meta 標籤 ... -->
+    
+    <!-- 1. 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- 2. 引入你剛剛拆出去的樣式檔 (取代原本落落長的 <style>) -->
+    <link rel="stylesheet" href="style.css">
+
+    <!-- 3. 保留 Import Map (這必須寫在 HTML 裡讓瀏覽器認識 Three.js) -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+</head>
+<body class="w-screen flex flex-col">
+    
+    <!-- ... (這裡保留你原本寫的所有 HTML 結構、按鈕、側邊欄、畫面容器) ... -->
+
+    <!-- 4. 在最下方引入你剛剛拆出去的邏輯腳本 (取代原本落落長的 <script>) -->
+    <script type="module" src="main.js"></script>
+</body>
+</html>
